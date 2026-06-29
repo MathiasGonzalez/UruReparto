@@ -28,6 +28,9 @@ on:
           - preview
           - production
 
+permissions:
+  contents: read
+
 jobs:
   type-check:
     name: Validate Mobile

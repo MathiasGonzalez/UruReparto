@@ -10,6 +10,9 @@ on:
       - "packages/shared/**"
       - ".github/workflows/deploy-backoffice.yml"
 
+permissions:
+  contents: read
+
 jobs:
   check:
     name: Validate Backoffice

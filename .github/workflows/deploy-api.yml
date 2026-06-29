@@ -10,6 +10,9 @@ on:
       - "packages/shared/**"
       - ".github/workflows/deploy-api.yml"
 
+permissions:
+  contents: read
+
 jobs:
   check:
     name: Validate API
