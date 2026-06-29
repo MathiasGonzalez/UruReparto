@@ -18,7 +18,7 @@ function isEnabled(flag: string | undefined): boolean {
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6).optional(),
-  tenantSlug: z.string().min(1),
+  tenantSlug: z.string().min(2).regex(/^[a-z0-9-]+$/),
 });
 
 auth.post("/login", zValidator("json", loginSchema), async (c) => {
@@ -107,7 +107,7 @@ auth.post("/login", zValidator("json", loginSchema), async (c) => {
 
 const otpRequestSchema = z.object({
   email: z.string().email(),
-  tenantSlug: z.string().min(1),
+  tenantSlug: z.string().min(2).regex(/^[a-z0-9-]+$/),
 });
 
 auth.post(
@@ -126,16 +126,24 @@ auth.post(
     // Generate and send OTP regardless of whether the user/tenant exists yet.
     // New accounts are provisioned automatically on /otp/verify when the code is correct.
     const code = generateOtp();
+    // Normalize email to prevent attempt-limit bypass via casing/whitespace variants.
+    const normalizedEmail = email.trim().toLowerCase();
     // Key uses tenantSlug (not tenant.id) so it works before the tenant is created.
-    const kvKey = `otp:${tenantSlug}:${email}`;
+    const kvKey = `otp:${tenantSlug}:${normalizedEmail}`;
     const expiresAt = Math.floor(Date.now() / 1000) + 600; // epoch seconds, 10 min from now
     const kvValue = JSON.stringify({ code, attempts: 0, expiresAt });
 
     // Store in KV using absolute expiration so re-writes (on failed attempts) can't extend it
     await c.env.SESSIONS.put(kvKey, kvValue, { expiration: expiresAt });
 
-    // Send via Cloudflare Email Workers
-    await sendOtpEmail(c.env, email, code);
+    // Send via Cloudflare Email Workers; swallow failures to keep response generic
+    // (protects against account enumeration and ensures always-200 behaviour).
+    try {
+      await sendOtpEmail(c.env, email, code);
+    } catch {
+      // On delivery failure, clean up KV so a retry gets a fresh code.
+      await c.env.SESSIONS.delete(kvKey);
+    }
 
     return c.json({
       success: true,
@@ -148,7 +156,7 @@ auth.post(
 
 const otpVerifySchema = z.object({
   email: z.string().email(),
-  tenantSlug: z.string().min(1),
+  tenantSlug: z.string().min(2).regex(/^[a-z0-9-]+$/),
   code: z.string().length(6),
 });
 
@@ -165,8 +173,9 @@ auth.post(
 
     const { email, tenantSlug, code } = c.req.valid("json");
 
-    // Key must match the one written by /otp/request
-    const kvKey = `otp:${tenantSlug}:${email}`;
+    // Key must match the one written by /otp/request (same normalization)
+    const normalizedEmail = email.trim().toLowerCase();
+    const kvKey = `otp:${tenantSlug}:${normalizedEmail}`;
     const stored = await c.env.SESSIONS.get(kvKey);
 
     if (!stored) {
@@ -176,7 +185,26 @@ auth.post(
       );
     }
 
-    const otpData = JSON.parse(stored) as { code: string; attempts: number; expiresAt: number };
+    let otpData: { code: string; attempts: number; expiresAt: number };
+    try {
+      otpData = JSON.parse(stored) as { code: string; attempts: number; expiresAt: number };
+    } catch {
+      // Malformed KV value — treat as invalid and clean up.
+      await c.env.SESSIONS.delete(kvKey);
+      return c.json(
+        { success: false, error: "Unauthorized", message: "Invalid or expired code" },
+        401
+      );
+    }
+
+    // Defensive expiry check (KV TTL should handle it, but guard against stale values).
+    if (Math.floor(Date.now() / 1000) > otpData.expiresAt) {
+      await c.env.SESSIONS.delete(kvKey);
+      return c.json(
+        { success: false, error: "Unauthorized", message: "Invalid or expired code" },
+        401
+      );
+    }
 
     // Allow max 5 attempts before invalidating
     if (otpData.attempts >= 5) {

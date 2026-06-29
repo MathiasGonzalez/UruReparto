@@ -14,7 +14,12 @@ export async function sendOtpEmail(
   toEmail: string,
   code: string
 ): Promise<void> {
-  const from = env.SEND_EMAIL_FROM;
+  if (!env.SEND_EMAIL_FROM) {
+    throw new Error("SEND_EMAIL_FROM is not configured");
+  }
+  // Strip CR/LF to prevent email header injection from misconfiguration or unexpected input.
+  const from = env.SEND_EMAIL_FROM.replace(/[\r\n]/g, "");
+  const safeTo = toEmail.replace(/[\r\n]/g, "");
   const subject = "Tu código de acceso — UruReparto";
   const body = [
     `Tu código de verificación es: ${code}`,
@@ -25,7 +30,7 @@ export async function sendOtpEmail(
 
   const rawEmail = [
     `From: UruReparto <${from}>`,
-    `To: ${toEmail}`,
+    `To: ${safeTo}`,
     `Subject: ${subject}`,
     "MIME-Version: 1.0",
     "Content-Type: text/plain; charset=utf-8",
@@ -42,6 +47,6 @@ export async function sendOtpEmail(
   });
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
-  const message = new EmailMessage(from, toEmail, stream);
+  const message = new EmailMessage(from, safeTo, stream);
   await env.SEND_EMAIL.send(message);
 }

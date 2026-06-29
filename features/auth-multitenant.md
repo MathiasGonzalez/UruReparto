@@ -56,7 +56,7 @@ Ambos flags pueden estar activos al mismo tiempo, permitiendo que los usuarios e
 ## Configuración de Cloudflare Email Workers
 - Se requiere un binding `send_email` llamado `SEND_EMAIL` en `wrangler.toml`.
 - La dirección `SEND_EMAIL_FROM` debe estar verificada en Cloudflare Email Routing.
-- Los OTPs se almacenan en el KV binding `SESSIONS` existente con clave `otp:{tenantId}:{email}`.
+- Los OTPs se almacenan en el KV binding `SESSIONS` existente con clave `otp:{tenantSlug}:{email}`.
 
 ## Implementación relacionada
 - API auth routes: `apps/api/src/routes/auth.ts`
