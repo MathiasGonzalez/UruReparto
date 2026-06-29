@@ -48,7 +48,7 @@ export async function getMyDeliveries(
   if (status) params.set("status", status);
 
   const res = await fetch(`${API_URL}/deliveries?${params}`, {
-    headers: { Authorization: `****** },
+    headers: { Authorization: "Bearer " + token },
   });
 
   const json = (await res.json()) as PaginatedResponse<Delivery> & { success: boolean };
@@ -64,7 +64,7 @@ export async function getDelivery(id: string): Promise<Delivery> {
   const token = await getStoredToken();
 
   const res = await fetch(`${API_URL}/deliveries/${id}`, {
-    headers: { Authorization: `****** },
+    headers: { Authorization: "Bearer " + token },
   });
 
   const json = (await res.json()) as ApiResponse<Delivery> & { success: boolean };
@@ -85,7 +85,7 @@ export async function updateDeliveryStatus(
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `******
+      Authorization: "Bearer " + token,
     },
     body: JSON.stringify({
       status: update.status,
