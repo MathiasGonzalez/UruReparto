@@ -1,4 +1,4 @@
-import type { D1Database, KVNamespace } from "@cloudflare/workers-types";
+import type { D1Database, KVNamespace, SendEmail } from "@cloudflare/workers-types";
 
 export interface Env {
   DB: D1Database;
@@ -6,6 +6,22 @@ export interface Env {
   JWT_SECRET: string;
   ENVIRONMENT: string;
   APP_NAME: string;
+  /** Cloudflare send_email binding — required when FEATURE_OTP_LOGIN is "true". */
+  SEND_EMAIL: SendEmail;
+  /** From-address used in OTP emails (must be verified in Cloudflare Email Routing). */
+  SEND_EMAIL_FROM: string;
+  /**
+   * Feature flag: enable OTP (one-time-code) login flow.
+   * Set to "true" to activate POST /auth/otp/request and POST /auth/otp/verify.
+   * Default: "true"
+   */
+  FEATURE_OTP_LOGIN: string;
+  /**
+   * Feature flag: enable traditional password login via POST /auth/login.
+   * Set to "false" to require users to use the OTP flow instead.
+   * Default: "true"
+   */
+  FEATURE_PASSWORD_LOGIN: string;
 }
 
 // ─── DB row types ──────────────────────────────────────────────────────────────

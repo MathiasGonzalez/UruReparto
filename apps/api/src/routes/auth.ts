@@ -2,18 +2,45 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { signJWT } from "../middleware/auth.js";
+import { sendOtpEmail } from "../email.js";
 import type { Env, UserRow, TenantRow } from "../db/types.js";
 
 const auth = new Hono<{ Bindings: Env }>();
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function isEnabled(flag: string | undefined): boolean {
+  return flag !== "false";
+}
+
+// ─── POST /auth/login  (password-based — gated by FEATURE_PASSWORD_LOGIN) ────
+
 const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string().min(6).optional(),
   tenantSlug: z.string().min(1),
 });
 
 auth.post("/login", zValidator("json", loginSchema), async (c) => {
+  if (!isEnabled(c.env.FEATURE_PASSWORD_LOGIN)) {
+    return c.json(
+      {
+        success: false,
+        error: "Forbidden",
+        message: "Password login is disabled. Use the OTP flow instead.",
+      },
+      403
+    );
+  }
+
   const { email, password, tenantSlug } = c.req.valid("json");
+
+  if (!password) {
+    return c.json(
+      { success: false, error: "BadRequest", message: "password is required" },
+      400
+    );
+  }
 
   const tenant = await c.env.DB.prepare(
     "SELECT * FROM tenants WHERE slug = ? AND status = 'active'"
@@ -41,7 +68,6 @@ auth.post("/login", zValidator("json", loginSchema), async (c) => {
     );
   }
 
-  // Verify password using Web Crypto (PBKDF2 hash stored as hex)
   const valid = await verifyPassword(password, user.password_hash);
   if (!valid) {
     return c.json(
@@ -76,6 +102,178 @@ auth.post("/login", zValidator("json", loginSchema), async (c) => {
     },
   });
 });
+
+// ─── POST /auth/otp/request  (gated by FEATURE_OTP_LOGIN) ────────────────────
+
+const otpRequestSchema = z.object({
+  email: z.string().email(),
+  tenantSlug: z.string().min(1),
+});
+
+auth.post(
+  "/otp/request",
+  zValidator("json", otpRequestSchema),
+  async (c) => {
+    if (!isEnabled(c.env.FEATURE_OTP_LOGIN)) {
+      return c.json(
+        { success: false, error: "Forbidden", message: "OTP login is disabled." },
+        403
+      );
+    }
+
+    const { email, tenantSlug } = c.req.valid("json");
+
+    const tenant = await c.env.DB.prepare(
+      "SELECT * FROM tenants WHERE slug = ? AND status = 'active'"
+    )
+      .bind(tenantSlug)
+      .first<TenantRow>();
+
+    if (!tenant) {
+      // Return success to avoid email enumeration
+      return c.json({ success: true, data: { message: "Si el email está registrado, recibirás el código." } });
+    }
+
+    const user = await c.env.DB.prepare(
+      "SELECT id FROM users WHERE tenant_id = ? AND email = ? AND status = 'active'"
+    )
+      .bind(tenant.id, email)
+      .first<{ id: string }>();
+
+    if (!user) {
+      // Same response to avoid enumeration
+      return c.json({ success: true, data: { message: "Si el email está registrado, recibirás el código." } });
+    }
+
+    // Generate 6-digit OTP
+    const code = generateOtp();
+    const kvKey = `otp:${tenant.id}:${email}`;
+    const kvValue = JSON.stringify({ code, attempts: 0 });
+
+    // Store in KV with 10-minute TTL
+    await c.env.SESSIONS.put(kvKey, kvValue, { expirationTtl: 600 });
+
+    // Send via Cloudflare Email Workers
+    await sendOtpEmail(c.env, email, code);
+
+    return c.json({
+      success: true,
+      data: { message: "Si el email está registrado, recibirás el código." },
+    });
+  }
+);
+
+// ─── POST /auth/otp/verify  (gated by FEATURE_OTP_LOGIN) ─────────────────────
+
+const otpVerifySchema = z.object({
+  email: z.string().email(),
+  tenantSlug: z.string().min(1),
+  code: z.string().length(6),
+});
+
+auth.post(
+  "/otp/verify",
+  zValidator("json", otpVerifySchema),
+  async (c) => {
+    if (!isEnabled(c.env.FEATURE_OTP_LOGIN)) {
+      return c.json(
+        { success: false, error: "Forbidden", message: "OTP login is disabled." },
+        403
+      );
+    }
+
+    const { email, tenantSlug, code } = c.req.valid("json");
+
+    const tenant = await c.env.DB.prepare(
+      "SELECT * FROM tenants WHERE slug = ? AND status = 'active'"
+    )
+      .bind(tenantSlug)
+      .first<TenantRow>();
+
+    if (!tenant) {
+      return c.json(
+        { success: false, error: "Unauthorized", message: "Invalid or expired code" },
+        401
+      );
+    }
+
+    const kvKey = `otp:${tenant.id}:${email}`;
+    const stored = await c.env.SESSIONS.get(kvKey);
+
+    if (!stored) {
+      return c.json(
+        { success: false, error: "Unauthorized", message: "Invalid or expired code" },
+        401
+      );
+    }
+
+    const otpData = JSON.parse(stored) as { code: string; attempts: number };
+
+    // Allow max 5 attempts before invalidating
+    if (otpData.attempts >= 5) {
+      await c.env.SESSIONS.delete(kvKey);
+      return c.json(
+        { success: false, error: "Unauthorized", message: "Invalid or expired code" },
+        401
+      );
+    }
+
+    if (otpData.code !== code) {
+      otpData.attempts += 1;
+      await c.env.SESSIONS.put(kvKey, JSON.stringify(otpData), {
+        expirationTtl: 600,
+      });
+      return c.json(
+        { success: false, error: "Unauthorized", message: "Invalid or expired code" },
+        401
+      );
+    }
+
+    // Valid code — delete OTP and issue JWT
+    await c.env.SESSIONS.delete(kvKey);
+
+    const user = await c.env.DB.prepare(
+      "SELECT * FROM users WHERE tenant_id = ? AND email = ? AND status = 'active'"
+    )
+      .bind(tenant.id, email)
+      .first<UserRow>();
+
+    if (!user) {
+      return c.json(
+        { success: false, error: "Unauthorized", message: "Invalid or expired code" },
+        401
+      );
+    }
+
+    const token = await signJWT(
+      {
+        sub: user.id,
+        tenantId: user.tenant_id,
+        email: user.email,
+        role: user.role,
+      },
+      c.env.JWT_SECRET
+    );
+
+    return c.json({
+      success: true,
+      data: {
+        accessToken: token,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          status: user.status,
+          createdAt: user.created_at,
+          updatedAt: user.updated_at,
+        },
+      },
+    });
+  }
+);
+
+// ─── POST /auth/register-tenant ───────────────────────────────────────────────
 
 auth.post(
   "/register-tenant",
@@ -129,6 +327,13 @@ auth.post(
   }
 );
 
+// ─── OTP generator ────────────────────────────────────────────────────────────
+
+function generateOtp(): string {
+  const digits = crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000;
+  return digits.toString().padStart(6, "0");
+}
+
 // ─── Password helpers using Web Crypto ────────────────────────────────────────
 
 async function hashPassword(password: string): Promise<string> {
@@ -176,3 +381,4 @@ async function verifyPassword(password: string, stored: string): Promise<boolean
 }
 
 export { auth };
+

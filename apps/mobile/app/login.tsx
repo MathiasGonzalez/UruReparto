@@ -11,15 +11,23 @@ import {
   Platform,
 } from "react-native";
 import { router } from "expo-router";
-import { login } from "../services/api";
+import { login, requestOtp, verifyOtp } from "../services/api";
+
+type LoginMode = "otp" | "password";
+type OtpStep = "request" | "verify";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [tenantSlug, setTenantSlug] = useState("");
+  const [password, setPassword] = useState("");
+  const [otpCode, setOtpCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<LoginMode>("otp");
+  const [otpStep, setOtpStep] = useState<OtpStep>("request");
 
-  async function handleLogin() {
+  // ─── Password login ──────────────────────────────────────────────────────
+
+  async function handlePasswordLogin() {
     if (!email || !password || !tenantSlug) {
       Alert.alert("Error", "Por favor completá todos los campos.");
       return;
@@ -37,6 +45,60 @@ export default function LoginScreen() {
     }
   }
 
+  // ─── OTP: step 1 — request code ─────────────────────────────────────────
+
+  async function handleRequestOtp() {
+    if (!email || !tenantSlug) {
+      Alert.alert("Error", "Por favor ingresá tu email y empresa.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await requestOtp({ email, tenantSlug });
+      setOtpStep("verify");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error al solicitar el código.";
+      Alert.alert("Error", msg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ─── OTP: step 2 — verify code ──────────────────────────────────────────
+
+  async function handleVerifyOtp() {
+    if (!otpCode || otpCode.length !== 6) {
+      Alert.alert("Error", "Ingresá el código de 6 dígitos.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await verifyOtp({ email, tenantSlug, code: otpCode });
+      router.replace("/(tabs)/");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Código inválido o expirado.";
+      Alert.alert("Error", msg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function switchToOtp() {
+    setMode("otp");
+    setOtpStep("request");
+    setPassword("");
+    setOtpCode("");
+  }
+
+  function switchToPassword() {
+    setMode("password");
+    setOtpCode("");
+  }
+
+  // ─── Render ──────────────────────────────────────────────────────────────
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -47,6 +109,7 @@ export default function LoginScreen() {
         <Text style={styles.title}>UruReparto</Text>
         <Text style={styles.subtitle}>App de Repartidor</Text>
 
+        {/* Common fields */}
         <TextInput
           style={styles.input}
           placeholder="Empresa (slug)"
@@ -66,26 +129,85 @@ export default function LoginScreen() {
           autoCapitalize="none"
           autoCorrect={false}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Contraseña"
-          placeholderTextColor="#9ca3af"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
 
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Iniciar sesión</Text>
-          )}
-        </TouchableOpacity>
+        {/* OTP flow */}
+        {mode === "otp" && otpStep === "request" && (
+          <>
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handleRequestOtp}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Solicitar código</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.switchBtn} onPress={switchToPassword}>
+              <Text style={styles.switchText}>Ingresar con contraseña</Text>
+            </TouchableOpacity>
+          </>
+        )}
+
+        {mode === "otp" && otpStep === "verify" && (
+          <>
+            <Text style={styles.hint}>
+              Revisá tu bandeja de entrada y escribí el código de 6 dígitos.
+            </Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Código (6 dígitos)"
+              placeholderTextColor="#9ca3af"
+              value={otpCode}
+              onChangeText={setOtpCode}
+              keyboardType="number-pad"
+              maxLength={6}
+            />
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handleVerifyOtp}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Verificar código</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.switchBtn} onPress={switchToOtp}>
+              <Text style={styles.switchText}>Volver a solicitar código</Text>
+            </TouchableOpacity>
+          </>
+        )}
+
+        {/* Password flow */}
+        {mode === "password" && (
+          <>
+            <TextInput
+              style={styles.input}
+              placeholder="Contraseña"
+              placeholderTextColor="#9ca3af"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handlePasswordLogin}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Iniciar sesión</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.switchBtn} onPress={switchToOtp}>
+              <Text style={styles.switchText}>Ingresar con código por email</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     </KeyboardAvoidingView>
   );
@@ -125,6 +247,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 28,
   },
+  hint: {
+    fontSize: 13,
+    color: "#6b7280",
+    textAlign: "center",
+    marginBottom: 12,
+  },
   input: {
     borderWidth: 1,
     borderColor: "#e5e7eb",
@@ -145,4 +273,7 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { backgroundColor: "#93c5fd" },
   buttonText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  switchBtn: { marginTop: 16, alignItems: "center" },
+  switchText: { color: "#1d4ed8", fontSize: 14 },
 });
+

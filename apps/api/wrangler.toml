@@ -6,6 +6,14 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 ENVIRONMENT = "production"
 APP_NAME = "UruReparto API"
+# Feature flags — set to "false" to disable a login method
+FEATURE_OTP_LOGIN = "true"
+FEATURE_PASSWORD_LOGIN = "true"
+# Verified sender address configured in Cloudflare Email Routing
+SEND_EMAIL_FROM = "noreply@yourdomain.com"
+
+[[send_email]]
+name = "SEND_EMAIL"
 
 [[d1_databases]]
 binding = "DB"
@@ -21,12 +29,19 @@ name = "urureparto-api-dev"
 
 [env.dev.vars]
 ENVIRONMENT = "dev"
+FEATURE_OTP_LOGIN = "true"
+FEATURE_PASSWORD_LOGIN = "true"
+SEND_EMAIL_FROM = "noreply@yourdomain.com"
 
-[env.dev.d1_databases]
+[[env.dev.send_email]]
+name = "SEND_EMAIL"
+
+[[env.dev.d1_databases]]
 binding = "DB"
 database_name = "urureparto-db-dev"
 database_id = "YOUR_DEV_D1_DATABASE_ID"
 
-[env.dev.kv_namespaces]
+[[env.dev.kv_namespaces]]
 binding = "SESSIONS"
 id = "YOUR_DEV_KV_NAMESPACE_ID"
+
