@@ -108,4 +108,4 @@ Cada tenant tiene su propio `slug` único. Usuarios, stock y envíos están siem
 | `deploy-backoffice.yml` | Push a `main`/`dev` en `apps/backoffice` | Deploya Cloudflare Pages |
 | `mobile-build.yml` | Push a `main` en `apps/mobile` | EAS Build (preview) |
 
-Guía de publicación y secretos para `dev`/`prod`: `/home/runner/work/UruReparto/UruReparto/docs/publicacion-dev-prod.md`.
+Guía de publicación y secretos para `dev`/`prod`: `docs/publicacion-dev-prod.md`.
