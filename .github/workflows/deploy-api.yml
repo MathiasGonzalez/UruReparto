@@ -9,12 +9,6 @@ on:
       - "apps/api/**"
       - "packages/shared/**"
       - ".github/workflows/deploy-api.yml"
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "apps/api/**"
-      - "packages/shared/**"
 
 jobs:
   check:

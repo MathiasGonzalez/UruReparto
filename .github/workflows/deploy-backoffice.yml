@@ -9,12 +9,6 @@ on:
       - "apps/backoffice/**"
       - "packages/shared/**"
       - ".github/workflows/deploy-backoffice.yml"
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "apps/backoffice/**"
-      - "packages/shared/**"
 
 jobs:
   check:
@@ -37,37 +31,6 @@ jobs:
 
       - name: Build backoffice
         run: pnpm --filter @urureparto/backoffice build
-
-  deploy-preview:
-    name: Deploy Preview (PR)
-    runs-on: ubuntu-latest
-    needs: check
-    if: github.event_name == 'pull_request'
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build backoffice
-        run: pnpm --filter @urureparto/backoffice build
-
-      - name: Deploy preview to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: apps/backoffice
-          command: pages deploy dist --project-name=urureparto-backoffice --branch=${{ github.head_ref }}
 
   deploy-dev:
     name: Deploy Dev
