@@ -123,31 +123,11 @@ auth.post(
 
     const { email, tenantSlug } = c.req.valid("json");
 
-    const tenant = await c.env.DB.prepare(
-      "SELECT * FROM tenants WHERE slug = ? AND status = 'active'"
-    )
-      .bind(tenantSlug)
-      .first<TenantRow>();
-
-    if (!tenant) {
-      // Return success to avoid email enumeration
-      return c.json({ success: true, data: { message: "Si el email está registrado, recibirás el código." } });
-    }
-
-    const user = await c.env.DB.prepare(
-      "SELECT id FROM users WHERE tenant_id = ? AND email = ? AND status = 'active'"
-    )
-      .bind(tenant.id, email)
-      .first<{ id: string }>();
-
-    if (!user) {
-      // Same response to avoid enumeration
-      return c.json({ success: true, data: { message: "Si el email está registrado, recibirás el código." } });
-    }
-
-    // Generate 6-digit OTP
+    // Generate and send OTP regardless of whether the user/tenant exists yet.
+    // New accounts are provisioned automatically on /otp/verify when the code is correct.
     const code = generateOtp();
-    const kvKey = `otp:${tenant.id}:${email}`;
+    // Key uses tenantSlug (not tenant.id) so it works before the tenant is created.
+    const kvKey = `otp:${tenantSlug}:${email}`;
     const expiresAt = Math.floor(Date.now() / 1000) + 600; // epoch seconds, 10 min from now
     const kvValue = JSON.stringify({ code, attempts: 0, expiresAt });
 
@@ -185,20 +165,8 @@ auth.post(
 
     const { email, tenantSlug, code } = c.req.valid("json");
 
-    const tenant = await c.env.DB.prepare(
-      "SELECT * FROM tenants WHERE slug = ? AND status = 'active'"
-    )
-      .bind(tenantSlug)
-      .first<TenantRow>();
-
-    if (!tenant) {
-      return c.json(
-        { success: false, error: "Unauthorized", message: "Invalid or expired code" },
-        401
-      );
-    }
-
-    const kvKey = `otp:${tenant.id}:${email}`;
+    // Key must match the one written by /otp/request
+    const kvKey = `otp:${tenantSlug}:${email}`;
     const stored = await c.env.SESSIONS.get(kvKey);
 
     if (!stored) {
@@ -231,18 +199,77 @@ auth.post(
       );
     }
 
-    // Valid code — delete OTP and issue JWT
+    // Valid code — delete OTP
     await c.env.SESSIONS.delete(kvKey);
 
-    const user = await c.env.DB.prepare(
-      "SELECT * FROM users WHERE tenant_id = ? AND email = ? AND status = 'active'"
+    // ── Auto-provision tenant if it doesn't exist yet ─────────────────────────
+    let tenant = await c.env.DB.prepare(
+      "SELECT * FROM tenants WHERE slug = ? AND status = 'active'"
+    )
+      .bind(tenantSlug)
+      .first<TenantRow>();
+
+    if (!tenant) {
+      // INSERT OR IGNORE handles concurrent requests racing to create the same tenant.
+      await c.env.DB.prepare(
+        "INSERT OR IGNORE INTO tenants (name, slug) VALUES (?, ?)"
+      )
+        .bind(tenantSlug, tenantSlug)
+        .run();
+
+      tenant = await c.env.DB.prepare(
+        "SELECT * FROM tenants WHERE slug = ? AND status = 'active'"
+      )
+        .bind(tenantSlug)
+        .first<TenantRow>();
+    }
+
+    if (!tenant) {
+      return c.json(
+        { success: false, error: "InternalError", message: "Could not provision tenant" },
+        500
+      );
+    }
+
+    // ── Auto-provision user if it doesn't exist yet ───────────────────────────
+    // Fetch without status filter so we can return a specific "inactive" error below.
+    let user = await c.env.DB.prepare(
+      "SELECT * FROM users WHERE tenant_id = ? AND email = ?"
     )
       .bind(tenant.id, email)
       .first<UserRow>();
 
     if (!user) {
+      // Derive a display name from the local part of the email address.
+      const displayName = email.split("@")[0] || email;
+
+      // The first user registered in a tenant becomes its admin.
+      const { count } = (await c.env.DB.prepare(
+        "SELECT COUNT(*) AS count FROM users WHERE tenant_id = ?"
+      )
+        .bind(tenant.id)
+        .first<{ count: number }>()) ?? { count: 0 };
+
+      const role = count === 0 ? "admin" : "operator";
+
+      // password_hash is left empty — OTP-provisioned accounts have no password.
+      // INSERT OR IGNORE handles concurrent requests racing to create the same user.
+      await c.env.DB.prepare(
+        "INSERT OR IGNORE INTO users (tenant_id, email, name, password_hash, role) VALUES (?, ?, ?, '', ?)"
+      )
+        .bind(tenant.id, email, displayName, role)
+        .run();
+
+      user = await c.env.DB.prepare(
+        "SELECT * FROM users WHERE tenant_id = ? AND email = ?"
+      )
+        .bind(tenant.id, email)
+        .first<UserRow>();
+    }
+
+    if (!user || user.status !== "active") {
       return c.json(
-        { success: false, error: "Unauthorized", message: "Invalid or expired code" },
+        { success: false, error: "Unauthorized", message: "Account is inactive" },
         401
       );
     }
