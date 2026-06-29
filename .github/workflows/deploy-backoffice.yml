@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   check:
-    name: Validate Backoffice
+    name: Build Backoffice
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,16 +23,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "pnpm"
-
-      - name: Setup pnpm via Corepack
-        run: corepack enable
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm install --legacy-peer-deps
 
       - name: Build backoffice
-        run: pnpm --filter @urureparto/backoffice build
+        run: npm run build --workspace=@urureparto/backoffice
 
   deploy-dev:
     name: Deploy Backoffice to Dev
@@ -46,16 +42,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "pnpm"
-
-      - name: Setup pnpm via Corepack
-        run: corepack enable
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm install --legacy-peer-deps
 
       - name: Build backoffice
-        run: pnpm --filter @urureparto/backoffice build
+        run: npm run build --workspace=@urureparto/backoffice
 
       - name: Deploy to Cloudflare Pages (dev)
         uses: cloudflare/wrangler-action@v3
@@ -77,16 +69,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "pnpm"
-
-      - name: Setup pnpm via Corepack
-        run: corepack enable
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm install --legacy-peer-deps
 
       - name: Build backoffice
-        run: pnpm --filter @urureparto/backoffice build
+        run: npm run build --workspace=@urureparto/backoffice
 
       - name: Deploy to Cloudflare Pages (production)
         uses: cloudflare/wrangler-action@v3

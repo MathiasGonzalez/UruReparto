@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   check:
-    name: Validate API
+    name: Type Check API
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,16 +23,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "pnpm"
-
-      - name: Setup pnpm via Corepack
-        run: corepack enable
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm install --legacy-peer-deps
 
       - name: Type check
-        run: pnpm --filter @urureparto/api type-check
+        run: npm run type-check --workspace=@urureparto/api
 
   deploy-dev:
     name: Deploy API to Dev
@@ -46,13 +42,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "pnpm"
-
-      - name: Setup pnpm via Corepack
-        run: corepack enable
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm install --legacy-peer-deps
 
       - name: Deploy to Cloudflare Workers (dev)
         uses: cloudflare/wrangler-action@v3
@@ -74,13 +66,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "pnpm"
-
-      - name: Setup pnpm via Corepack
-        run: corepack enable
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm install --legacy-peer-deps
 
       - name: Run DB migrations
         uses: cloudflare/wrangler-action@v3

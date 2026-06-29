@@ -22,19 +22,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "pnpm"
-
-      - name: Setup pnpm via Corepack
-        run: corepack enable
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm install --legacy-peer-deps
 
       - name: Lint
-        run: pnpm lint
+        run: npm run lint --workspaces --if-present
 
       - name: Build
-        run: pnpm build
+        run: npm run build --workspaces --if-present
 
       - name: Type check
-        run: pnpm type-check
+        run: npm run type-check --workspaces --if-present

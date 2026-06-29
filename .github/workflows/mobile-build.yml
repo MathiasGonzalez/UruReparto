@@ -41,16 +41,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "pnpm"
-
-      - name: Setup pnpm via Corepack
-        run: corepack enable
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm install --legacy-peer-deps
 
       - name: Type check mobile
-        run: pnpm --filter @urureparto/mobile type-check
+        run: npm run type-check --workspace=@urureparto/mobile
 
   build:
     name: Build Mobile with EAS
@@ -63,13 +59,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "pnpm"
-
-      - name: Setup pnpm via Corepack
-        run: corepack enable
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm install --legacy-peer-deps
 
       - name: Setup Expo EAS
         uses: expo/expo-github-action@v8
