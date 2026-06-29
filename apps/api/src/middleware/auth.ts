@@ -43,9 +43,8 @@ async function verifyJWT(
       ["verify"]
     );
 
-    const signature = Uint8Array.from(
-      atob(signatureB64.replace(/-/g, "+").replace(/_/g, "/")),
-      (c) => c.charCodeAt(0)
+    const signature = Uint8Array.from(base64UrlDecode(signatureB64), (c) =>
+      c.charCodeAt(0)
     );
 
     const valid = await crypto.subtle.verify(

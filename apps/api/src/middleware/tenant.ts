@@ -9,8 +9,8 @@ declare module "hono" {
 
 /**
  * Tenant resolution middleware.
- * Reads the X-Tenant-Slug header and resolves tenantId from DB.
- * Must be used after authMiddleware so that the user is already set.
+ * Reads tenantId from the authenticated user payload set by authMiddleware.
+ * Must be used after authMiddleware so that the user context is already set.
  */
 export const tenantMiddleware = createMiddleware<{ Bindings: Env }>(
   async (c, next) => {

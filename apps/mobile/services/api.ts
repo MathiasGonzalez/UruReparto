@@ -38,12 +38,21 @@ export async function getStoredToken(): Promise<string | null> {
   return SecureStore.getItemAsync(TOKEN_KEY);
 }
 
+async function getRequiredToken(): Promise<string> {
+  const token = await getStoredToken();
+  if (!token) {
+    throw new Error("User is not authenticated");
+  }
+
+  return token;
+}
+
 // ─── Deliveries ───────────────────────────────────────────────────────────────
 
 export async function getMyDeliveries(
   status?: string
 ): Promise<PaginatedResponse<Delivery>> {
-  const token = await getStoredToken();
+  const token = await getRequiredToken();
   const params = new URLSearchParams({ pageSize: "50" });
   if (status) params.set("status", status);
 
@@ -61,7 +70,7 @@ export async function getMyDeliveries(
 }
 
 export async function getDelivery(id: string): Promise<Delivery> {
-  const token = await getStoredToken();
+  const token = await getRequiredToken();
 
   const res = await fetch(`${API_URL}/deliveries/${id}`, {
     headers: { Authorization: "Bearer " + token },
@@ -79,7 +88,7 @@ export async function getDelivery(id: string): Promise<Delivery> {
 export async function updateDeliveryStatus(
   update: DeliveryStatusUpdate
 ): Promise<Delivery> {
-  const token = await getStoredToken();
+  const token = await getRequiredToken();
 
   const res = await fetch(`${API_URL}/deliveries/${update.deliveryId}/status`, {
     method: "PATCH",
