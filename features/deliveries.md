@@ -31,5 +31,5 @@ Administrar ciclo de vida de entregas desde creación hasta entrega/fallo, con t
 - Tracking público no requiere autenticación.
 
 ## Implementación relacionada
-- API: `/home/runner/work/UruReparto/UruReparto/apps/api/src/routes/deliveries.ts`
-- Backoffice listado: `/home/runner/work/UruReparto/UruReparto/apps/backoffice/src/pages/deliveries/index.astro`
+- API: `apps/api/src/routes/deliveries.ts`
+- Backoffice listado: `apps/backoffice/src/pages/deliveries/index.astro`

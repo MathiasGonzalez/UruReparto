@@ -25,6 +25,6 @@ Permitir inicio de sesión por tenant y alta inicial de tenant con usuario admin
 - JWT firmado con `JWT_SECRET`.
 
 ## Implementación relacionada
-- API: `/home/runner/work/UruReparto/UruReparto/apps/api/src/routes/auth.ts`
-- Middleware auth: `/home/runner/work/UruReparto/UruReparto/apps/api/src/middleware/auth.ts`
-- Login mobile: `/home/runner/work/UruReparto/UruReparto/apps/mobile/app/login.tsx`
+- API: `apps/api/src/routes/auth.ts`
+- Middleware auth: `apps/api/src/middleware/auth.ts`
+- Login mobile: `apps/mobile/app/login.tsx`

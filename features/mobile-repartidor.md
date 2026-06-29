@@ -20,11 +20,11 @@ Permitir al repartidor operar entregas en campo: autenticarse, ver pendientes, c
 - Consumo de API autenticada con JWT.
 
 ## Pantallas involucradas
-- `/home/runner/work/UruReparto/UruReparto/apps/mobile/app/login.tsx`
-- `/home/runner/work/UruReparto/UruReparto/apps/mobile/app/(tabs)/index.tsx`
-- `/home/runner/work/UruReparto/UruReparto/apps/mobile/app/(tabs)/deliveries.tsx`
-- `/home/runner/work/UruReparto/UruReparto/apps/mobile/app/delivery/[id].tsx`
-- `/home/runner/work/UruReparto/UruReparto/apps/mobile/app/(tabs)/profile.tsx`
+- `apps/mobile/app/login.tsx`
+- `apps/mobile/app/(tabs)/index.tsx`
+- `apps/mobile/app/(tabs)/deliveries.tsx`
+- `apps/mobile/app/delivery/[id].tsx`
+- `apps/mobile/app/(tabs)/profile.tsx`
 
 ## Reglas de negocio clave
 - La app opera sobre envíos asignados al driver autenticado.

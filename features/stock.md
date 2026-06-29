@@ -30,5 +30,5 @@ Gestionar inventario por tenant, incluyendo alta, consulta, edición y movimient
 - Se registra usuario que genera el movimiento.
 
 ## Implementación relacionada
-- API: `/home/runner/work/UruReparto/UruReparto/apps/api/src/routes/stock.ts`
-- Backoffice listado: `/home/runner/work/UruReparto/UruReparto/apps/backoffice/src/pages/stock/index.astro`
+- API: `apps/api/src/routes/stock.ts`
+- Backoffice listado: `apps/backoffice/src/pages/stock/index.astro`
