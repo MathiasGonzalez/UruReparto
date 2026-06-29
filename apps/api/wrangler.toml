@@ -16,17 +16,17 @@ database_id = "YOUR_D1_DATABASE_ID"
 binding = "SESSIONS"
 id = "YOUR_KV_NAMESPACE_ID"
 
-[env.staging]
-name = "urureparto-api-staging"
+[env.dev]
+name = "urureparto-api-dev"
 
-[env.staging.vars]
-ENVIRONMENT = "staging"
+[env.dev.vars]
+ENVIRONMENT = "dev"
 
-[env.staging.d1_databases]
+[env.dev.d1_databases]
 binding = "DB"
-database_name = "urureparto-db-staging"
-database_id = "YOUR_STAGING_D1_DATABASE_ID"
+database_name = "urureparto-db-dev"
+database_id = "YOUR_DEV_D1_DATABASE_ID"
 
-[env.staging.kv_namespaces]
+[env.dev.kv_namespaces]
 binding = "SESSIONS"
-id = "YOUR_STAGING_KV_NAMESPACE_ID"
+id = "YOUR_DEV_KV_NAMESPACE_ID"

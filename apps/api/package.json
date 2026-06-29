@@ -9,7 +9,7 @@
     "type-check": "tsc --noEmit",
     "lint": "tsc --noEmit",
     "deploy": "wrangler deploy",
-    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:dev": "wrangler deploy --env dev",
     "db:migrate": "wrangler d1 execute urureparto-db --file=./src/db/schema.sql",
     "db:migrate:local": "wrangler d1 execute urureparto-db --local --file=./src/db/schema.sql"
   },

@@ -6,8 +6,8 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 API_URL = "https://urureparto-api.workers.dev"
 
-[env.staging]
-name = "urureparto-backoffice-staging"
+[env.dev]
+name = "urureparto-backoffice-dev"
 
-[env.staging.vars]
-API_URL = "https://urureparto-api-staging.workers.dev"
+[env.dev.vars]
+API_URL = "https://urureparto-api-dev.workers.dev"

@@ -104,7 +104,8 @@ Cada tenant tiene su propio `slug` único. Usuarios, stock y envíos están siem
 
 | Workflow | Trigger | Acción |
 |---|---|---|
-| `deploy-api.yml` | Push a `main`/`staging` en `apps/api` | Deploya Cloudflare Worker |
-| `deploy-backoffice.yml` | Push a `main`/`staging` en `apps/backoffice` | Deploya Cloudflare Pages |
+| `deploy-api.yml` | Push a `main`/`dev` en `apps/api` | Deploya Cloudflare Worker |
+| `deploy-backoffice.yml` | Push a `main`/`dev` en `apps/backoffice` | Deploya Cloudflare Pages |
 | `mobile-build.yml` | Push a `main` en `apps/mobile` | EAS Build (preview) |
 
+Guía de publicación y secretos para `dev`/`prod`: `/home/runner/work/UruReparto/UruReparto/docs/publicacion-dev-prod.md`.
