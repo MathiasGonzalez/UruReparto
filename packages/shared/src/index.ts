@@ -28,8 +28,20 @@ export interface PaginatedResponse<T> {
 
 export interface LoginRequest {
   email: string;
-  password: string;
+  /** Required when password login is enabled (FEATURE_PASSWORD_LOGIN=true). */
+  password?: string;
   tenantSlug: string;
+}
+
+export interface OtpRequest {
+  email: string;
+  tenantSlug: string;
+}
+
+export interface OtpVerifyRequest {
+  email: string;
+  tenantSlug: string;
+  code: string;
 }
 
 export interface AuthenticatedUser {
