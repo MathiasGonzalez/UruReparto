@@ -1,0 +1,42 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Dashboard">
+  <div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+    <p class="text-gray-500 mt-1">Bienvenido a UruReparto Backoffice</p>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Stock card -->
+    <a
+      href="/stock"
+      class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow"
+    >
+      <div class="text-3xl mb-3">📦</div>
+      <h2 class="text-lg font-semibold text-gray-800">Stock</h2>
+      <p class="text-sm text-gray-500 mt-1">Gestión de inventario y movimientos</p>
+    </a>
+
+    <!-- Deliveries card -->
+    <a
+      href="/deliveries"
+      class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow"
+    >
+      <div class="text-3xl mb-3">🚚</div>
+      <h2 class="text-lg font-semibold text-gray-800">Envíos</h2>
+      <p class="text-sm text-gray-500 mt-1">Control y seguimiento de entregas</p>
+    </a>
+
+    <!-- Drivers card -->
+    <a
+      href="/drivers"
+      class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow"
+    >
+      <div class="text-3xl mb-3">🛵</div>
+      <h2 class="text-lg font-semibold text-gray-800">Repartidores</h2>
+      <p class="text-sm text-gray-500 mt-1">Asignación y seguimiento de repartidores</p>
+    </a>
+  </div>
+</Layout>
