@@ -16,7 +16,7 @@
     "@astrojs/cloudflare": "^12.1.1",
     "@astrojs/tailwind": "^5.1.4",
     "tailwindcss": "^3.4.17",
-    "@urureparto/shared": "workspace:*"
+    "@urureparto/shared": "^0.1.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
