@@ -19,6 +19,7 @@
     "@urureparto/shared": "workspace:*"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.9",
     "@cloudflare/workers-types": "^4.20241224.0",
     "typescript": "^5.7.2"
   }
