@@ -43,7 +43,7 @@ jobs:
           node-version: "22"
           cache: "pnpm"
 
-      - name: Setup pnpm
+      - name: Setup pnpm via Corepack
         run: corepack enable
 
       - name: Install dependencies
@@ -65,7 +65,7 @@ jobs:
           node-version: "22"
           cache: "pnpm"
 
-      - name: Setup pnpm
+      - name: Setup pnpm via Corepack
         run: corepack enable
 
       - name: Install dependencies
