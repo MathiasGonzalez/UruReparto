@@ -109,3 +109,7 @@ Cada tenant tiene su propio `slug` único. Usuarios, stock y envíos están siem
 | `mobile-build.yml` | Push a `main` en `apps/mobile` | EAS Build (preview) |
 
 Guía de publicación y secretos para `dev`/`prod`: `docs/publicacion-dev-prod.md`.
+
+## Features documentadas
+
+Documentación funcional por feature: `features/README.md`.
