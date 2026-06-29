@@ -87,7 +87,32 @@ En `apps/backoffice/wrangler.toml`:
 - Producción: `API_URL` de producción
 - Dev: `[env.dev.vars]` con `API_URL` apuntando a la API dev
 
-## 6) Checklist rápida
+### Cómo obtener IDs de D1 y KV para `wrangler.toml`
+
+Reemplazar estos placeholders en `apps/api/wrangler.toml`:
+- `YOUR_D1_DATABASE_ID`
+- `YOUR_KV_NAMESPACE_ID`
+- `YOUR_DEV_D1_DATABASE_ID`
+- `YOUR_DEV_KV_NAMESPACE_ID`
+
+Comandos útiles:
+
+```bash
+# Listar bases D1 y copiar database_id
+wrangler d1 list
+
+# Listar namespaces KV y copiar id
+wrangler kv namespace list
+```
+
+## 6) Mobile: `YOUR_EAS_PROJECT_ID`
+
+El placeholder `YOUR_EAS_PROJECT_ID` (en `apps/mobile/app.json`) se obtiene desde Expo:
+- Crear/configurar el proyecto con `eas init` en `apps/mobile`
+- O verlo en Expo Dashboard → Project settings
+- Copiar el `projectId` en `expo.extra.eas.projectId`
+
+## 7) Checklist rápida
 
 - [ ] Existe rama `dev`
 - [ ] Existen environments `dev` y `production` en GitHub
