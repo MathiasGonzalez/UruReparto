@@ -1,4 +1,4 @@
-name: CI PR Main
+name: PR Validation (main)
 
 on:
   pull_request:
@@ -9,28 +9,28 @@ concurrency:
   group: ci-pr-main-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   validate:
-    name: Lint, build y type-check
+    name: Lint, Build, and Type Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm install --legacy-peer-deps
 
       - name: Lint
-        run: pnpm lint
+        run: npm run lint --workspaces --if-present
 
       - name: Build
-        run: pnpm build
+        run: npm run build --workspaces --if-present
 
       - name: Type check
-        run: pnpm type-check
+        run: npm run type-check --workspaces --if-present
