@@ -12,7 +12,7 @@
     "clean": "rm -rf dist .astro"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^14.0.1",
+    "@astrojs/cloudflare": "^13.1.10",
     "@astrojs/tailwind": "^5.1.4",
     "@urureparto/shared": "^0.1.0",
     "astro": "^7.0.3",
