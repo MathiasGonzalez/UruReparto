@@ -1,0 +1,13 @@
+name = "urureparto-backoffice"
+pages_build_output_dir = "dist"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+API_URL = "https://urureparto-api.workers.dev"
+
+[env.staging]
+name = "urureparto-backoffice-staging"
+
+[env.staging.vars]
+API_URL = "https://urureparto-api-staging.workers.dev"
