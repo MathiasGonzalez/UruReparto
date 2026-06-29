@@ -148,10 +148,11 @@ auth.post(
     // Generate 6-digit OTP
     const code = generateOtp();
     const kvKey = `otp:${tenant.id}:${email}`;
-    const kvValue = JSON.stringify({ code, attempts: 0 });
+    const expiresAt = Math.floor(Date.now() / 1000) + 600; // epoch seconds, 10 min from now
+    const kvValue = JSON.stringify({ code, attempts: 0, expiresAt });
 
-    // Store in KV with 10-minute TTL
-    await c.env.SESSIONS.put(kvKey, kvValue, { expirationTtl: 600 });
+    // Store in KV using absolute expiration so re-writes (on failed attempts) can't extend it
+    await c.env.SESSIONS.put(kvKey, kvValue, { expiration: expiresAt });
 
     // Send via Cloudflare Email Workers
     await sendOtpEmail(c.env, email, code);
@@ -207,7 +208,7 @@ auth.post(
       );
     }
 
-    const otpData = JSON.parse(stored) as { code: string; attempts: number };
+    const otpData = JSON.parse(stored) as { code: string; attempts: number; expiresAt: number };
 
     // Allow max 5 attempts before invalidating
     if (otpData.attempts >= 5) {
@@ -220,8 +221,9 @@ auth.post(
 
     if (otpData.code !== code) {
       otpData.attempts += 1;
+      // Re-write using the ORIGINAL expiration (not a new TTL) so attempts can't extend validity
       await c.env.SESSIONS.put(kvKey, JSON.stringify(otpData), {
-        expirationTtl: 600,
+        expiration: otpData.expiresAt,
       });
       return c.json(
         { success: false, error: "Unauthorized", message: "Invalid or expired code" },
@@ -327,11 +329,18 @@ auth.post(
   }
 );
 
-// ─── OTP generator ────────────────────────────────────────────────────────────
+// ─── OTP generator (rejection-sampling, no modulo bias) ──────────────────────
 
 function generateOtp(): string {
-  const digits = crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000;
-  return digits.toString().padStart(6, "0");
+  const MAX = 1_000_000; // 6 digits
+  // threshold = floor(2^32 / MAX) * MAX  →  any value >= threshold is discarded
+  // 2^32 = 4_294_967_296; floor(4_294_967_296 / 1_000_000) = 4_294
+  const threshold = 4_294 * MAX; // 4_294_000_000
+  let val: number;
+  do {
+    val = crypto.getRandomValues(new Uint32Array(1))[0];
+  } while (val >= threshold);
+  return (val % MAX).toString().padStart(6, "0");
 }
 
 // ─── Password helpers using Web Crypto ────────────────────────────────────────

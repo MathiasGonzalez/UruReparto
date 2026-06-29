@@ -130,7 +130,7 @@ export default function LoginScreen() {
           autoCorrect={false}
         />
 
-        {/* OTP flow */}
+        {/* OTP flow — step 1: request */}
         {mode === "otp" && otpStep === "request" && (
           <>
             <TouchableOpacity
@@ -144,12 +144,18 @@ export default function LoginScreen() {
                 <Text style={styles.buttonText}>Solicitar código</Text>
               )}
             </TouchableOpacity>
-            <TouchableOpacity style={styles.switchBtn} onPress={switchToPassword}>
+            <TouchableOpacity
+              style={styles.switchBtn}
+              onPress={switchToPassword}
+              accessibilityLabel="Ingresar con contraseña"
+              accessibilityRole="button"
+            >
               <Text style={styles.switchText}>Ingresar con contraseña</Text>
             </TouchableOpacity>
           </>
         )}
 
+        {/* OTP flow — step 2: verify */}
         {mode === "otp" && otpStep === "verify" && (
           <>
             <Text style={styles.hint}>
@@ -175,7 +181,12 @@ export default function LoginScreen() {
                 <Text style={styles.buttonText}>Verificar código</Text>
               )}
             </TouchableOpacity>
-            <TouchableOpacity style={styles.switchBtn} onPress={switchToOtp}>
+            <TouchableOpacity
+              style={styles.switchBtn}
+              onPress={switchToOtp}
+              accessibilityLabel="Volver a solicitar código"
+              accessibilityRole="button"
+            >
               <Text style={styles.switchText}>Volver a solicitar código</Text>
             </TouchableOpacity>
           </>
@@ -203,7 +214,12 @@ export default function LoginScreen() {
                 <Text style={styles.buttonText}>Iniciar sesión</Text>
               )}
             </TouchableOpacity>
-            <TouchableOpacity style={styles.switchBtn} onPress={switchToOtp}>
+            <TouchableOpacity
+              style={styles.switchBtn}
+              onPress={switchToOtp}
+              accessibilityLabel="Ingresar con código por email"
+              accessibilityRole="button"
+            >
               <Text style={styles.switchText}>Ingresar con código por email</Text>
             </TouchableOpacity>
           </>
